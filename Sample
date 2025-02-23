@@ -1,0 +1,47 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+
+# Load dataset (replace with actual file path)
+df = pd.read_csv("student_attendance.csv")
+
+# Display basic info
+display(df.head())
+
+# Data preprocessing
+df['Date'] = pd.to_datetime(df['Date'])  # Convert date column
+df['Absent'] = df['Attendance'].apply(lambda x: 1 if x == 'Absent' else 0)  # Convert to binary
+
+# Exploratory Data Analysis (EDA)
+plt.figure(figsize=(10, 5))
+sns.lineplot(x='Date', y='Absent', data=df, estimator='mean', ci=None)
+plt.title("Average Student Absences Over Time")
+plt.xlabel("Date")
+plt.ylabel("Average Absences")
+plt.xticks(rotation=45)
+plt.show()
+
+# Group data by student to find chronic absenteeism
+student_absences = df.groupby("Student_ID")["Absent"].sum().reset_index()
+sns.histplot(student_absences['Absent'], bins=20, kde=True)
+plt.title("Distribution of Student Absences")
+plt.xlabel("Total Absences")
+plt.ylabel("Number of Students")
+plt.show()
+
+# Predicting At-Risk Students
+features = df[['Grade_Level', 'Days_Enrolled', 'Previous_Absences']]
+labels = df['Absent']
+X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.2, random_state=42)
+
+# Train model
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# Predict and evaluate
+y_pred = model.predict(X_test)
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print(classification_report(y_test, y_pred))
